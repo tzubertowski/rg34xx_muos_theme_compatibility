@@ -1,77 +1,12 @@
-async function copyFileToNewLocation(zip, originalPath, newPath, newZip) {
-    try {
-        const fileData = await zip.file(originalPath).async('arraybuffer');
-        newZip.file(newPath, fileData);
-        addStatusMessage(`Copied file: ${originalPath} to ${newPath}`, 'normal');
-    } catch (error) {
-        addStatusMessage(`Failed to copy file ${originalPath}: ${error.message}`, 'error');
-    }
-}
-
-async function processIniFile(zip, path, newZip) {
-    try {
-        let content = await zip.file(path).async('string');
-        
-        // Look for 640 and replace with 720 (but only when it refers to the width)
-        if (content.includes('640')) {
-            const originalContent = content;
-            
-            // Replace instances of 640x480 with 720x480
-            content = content.replace(/640x480/g, '720x480');
-            
-            // Replace instances of just "640" that likely refer to width
-            // This is a bit trickier - we want to replace "640" but not if it's part of other numbers
-            content = content.replace(/\b640\b/g, '720');
-            
-            if (content !== originalContent) {
-                addStatusMessage(`Updated references in INI file: ${path}`, 'success');
-            }
-        }
-        
-        // Write the file back (modified or not)
-        newZip.file(path, content);
-    } catch (error) {
-        addStatusMessage(`Failed to process INI file ${path}: ${error.message}`, 'error');
-    }
-}async function getImageDimensions(imageData) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            resolve({
-                width: img.width,
-                height: img.height
-            });
-        };
-        img.onerror = () => {
-            reject(new Error('Failed to load image for dimension checking'));
-        };
-        img.src = URL.createObjectURL(new Blob([imageData]));
-    });
-}async function processImageToNewLocation(zip, originalPath, newPath, newZip) {
-    try {
-        const imageData = await zip.file(originalPath).async('arraybuffer');
-        
-        // Check if the image is actually 640x480 before converting
-        const dimensions = await getImageDimensions(imageData);
-        
-        if (dimensions.width === 640 && dimensions.height === 480) {
-            addStatusMessage(`Converting image: ${originalPath} using ${conversionType} method`, 'normal');
-            const convertedImage = await resizeImage(imageData, 720, 480);
-            newZip.file(newPath, convertedImage);
-            
-            processedImages++;
-            updateProgress(processedImages, totalImages);
-            
-            addStatusMessage(`Processed image: ${newPath}`, 'success');
-        } else {
-            addStatusMessage(`Skipping non-640x480 image: ${originalPath} (${dimensions.width}x${dimensions.height})`, 'normal');
-            // Just copy the original image to the new location without resizing
-            newZip.file(newPath, imageData);
-        }
-    } catch (error) {
-        addStatusMessage(`Failed to process image ${originalPath}: ${error.message}`, 'error');
-    }
-}// DOM Elements
+// Initialize the device logo and selection when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Set the radio button based on the stored selection
+    const savedDevice = localStorage.getItem('selectedDevice') || 'rg34xx';
+    document.querySelector(`input[name="device-type"][value="${savedDevice}"]`).checked = true;
+    
+    // Set initial logo based on saved device
+    updateDeviceLogo();
+});// DOM Elements
 const fileInput = document.getElementById('file-input');
 const convertBtn = document.getElementById('convert-btn');
 const uploadContainer = document.getElementById('upload-container');
@@ -89,6 +24,29 @@ let convertedZip = null;
 let processedImages = 0;
 let totalImages = 0;
 let conversionType = "zoom"; // Default conversion type
+let selectedDevice = localStorage.getItem('selectedDevice') || "rg34xx"; // Get from localStorage or default to rg34xx
+
+// Device configurations
+const deviceConfigs = {
+    "rg34xx": {
+        name: "RG34XX",
+        width: 720,
+        height: 480,
+        folderName: "720x480",
+        originalWidth: 640,
+        originalHeight: 480,
+        logoFile: "logo.png"
+    },
+    "rgcubexx": {
+        name: "RG CUBEXX",
+        width: 720,
+        height: 720,
+        folderName: "720x720",
+        originalWidth: 640,
+        originalHeight: 480,
+        logoFile: "logocube.png"
+    }
+};
 
 // Event Listeners
 fileInput.addEventListener('change', handleFileSelect);
@@ -104,6 +62,27 @@ document.querySelectorAll('input[name="conversion-type"]').forEach(radio => {
         conversionType = this.value;
     });
 });
+
+// Add event listeners for device type radio buttons
+document.querySelectorAll('input[name="device-type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        selectedDevice = this.value;
+        // Save selection to localStorage
+        localStorage.setItem('selectedDevice', selectedDevice);
+        // Update logo based on device selection
+        updateDeviceLogo();
+    });
+});
+
+// Function to update the logo based on selected device
+function updateDeviceLogo() {
+    const deviceLogo = document.getElementById('device-logo');
+    if (selectedDevice === 'rgcubexx') {
+        deviceLogo.src = 'images/logocube.png';
+    } else {
+        deviceLogo.src = 'images/logo.png';
+    }
+}
 
 // Functions
 function handleFileSelect(event) {
@@ -161,170 +140,6 @@ function updateProgress(processed, total) {
     progressText.textContent = `Processing: ${percentage}%`;
 }
 
-async function processFile() {
-    if (!selectedFile) return;
-    
-    // Reset UI
-    statusContainer.style.display = 'block';
-    downloadContainer.style.display = 'none';
-    progressContainer.style.display = 'block';
-    statusMessages.innerHTML = '';
-    convertBtn.disabled = true;
-    processedImages = 0;
-    
-    addStatusMessage('Starting theme conversion process...', 'normal');
-    
-    try {
-        // Read the zip file
-        addStatusMessage('Reading theme file...', 'normal');
-        const zipData = await readFileAsArrayBuffer(selectedFile);
-        const zip = await JSZip.loadAsync(zipData);
-        addStatusMessage('Theme file loaded successfully', 'success');
-        
-        // Create new zip for the converted theme
-        const newZip = new JSZip();
-        
-        // Process version.txt
-        addStatusMessage('Checking for version.txt...', 'normal');
-        if (zip.file('version.txt')) {
-            const versionText = await zip.file('version.txt').async('string');
-            addStatusMessage(`Current version: ${versionText}`, 'normal');
-            
-            // Bump version
-            const newVersion = bumpVersion(versionText);
-            addStatusMessage(`Bumping version to: ${newVersion}`, 'normal');
-            newZip.file('version.txt', newVersion);
-        } else {
-            addStatusMessage('Warning: version.txt not found in the theme', 'error');
-            newZip.file('version.txt', '1.0');
-        }
-        
-        // Count images to be processed for progress tracking and create paths map
-        const imageFilePaths = [];
-        const filesToCopyToNewLocation = new Map(); // Map of original path to new path
-        const iniFiles = [];
-        
-        zip.forEach((relativePath, zipEntry) => {
-            if (zipEntry.dir) return;
-            
-            // Track images to process
-            if (isInImageFolder(relativePath) && isImageFile(relativePath)) {
-                imageFilePaths.push(relativePath);
-            }
-            
-            // Track files to copy to 720x480 folder
-            if (relativePath.startsWith('640x480/')) {
-                const newPath = relativePath.replace('640x480/', '720x480/');
-                filesToCopyToNewLocation.set(relativePath, newPath);
-            }
-            
-            // Track .ini files for text replacement
-            if (relativePath.endsWith('.ini')) {
-                iniFiles.push(relativePath);
-            }
-        });
-        
-        totalImages = imageFilePaths.length;
-        addStatusMessage(`Found ${totalImages} images to process and ${filesToCopyToNewLocation.size} files to copy to 720x480 folder`, 'normal');
-        
-        // First, copy ALL original files and folders to the new zip
-        addStatusMessage('Copying all original files and folders...', 'normal');
-        
-        // Step 1: Create all directories first to maintain structure
-        const allFolders = new Set();
-        zip.forEach((relativePath, zipEntry) => {
-            if (zipEntry.dir) {
-                allFolders.add(relativePath);
-            } else {
-                // Add parent folders for all files
-                let parentPath = relativePath.substring(0, relativePath.lastIndexOf('/') + 1);
-                while (parentPath) {
-                    allFolders.add(parentPath);
-                    // Move up one level
-                    const lastSlashIndex = parentPath.slice(0, -1).lastIndexOf('/');
-                    if (lastSlashIndex === -1) break;
-                    parentPath = parentPath.substring(0, lastSlashIndex + 1);
-                }
-            }
-        });
-        
-        // Add 720x480 folder structure
-        allFolders.forEach(folder => {
-            if (folder.startsWith('640x480/')) {
-                allFolders.add(folder.replace('640x480/', '720x480/'));
-            }
-        });
-        
-        // Create all folders in the zip
-        allFolders.forEach(folder => {
-            newZip.folder(folder);
-        });
-        
-        // Step 2: Copy all files with their content
-        const copyPromises = [];
-        zip.forEach((relativePath, zipEntry) => {
-            if (!zipEntry.dir) {
-                const promise = copyFile(zip, relativePath, newZip);
-                copyPromises.push(promise);
-            }
-        });
-        
-        // Wait for all files to be copied
-        await Promise.all(copyPromises);
-        addStatusMessage('All original files and folders copied successfully', 'success');
-        
-        // Process .ini files to replace 640 with 720
-        const iniPromises = [];
-        for (const iniPath of iniFiles) {
-            const promise = processIniFile(zip, iniPath, newZip);
-            iniPromises.push(promise);
-        }
-        
-        await Promise.all(iniPromises);
-        addStatusMessage('Processed all .ini files', 'success');
-        
-        // Copy files from 640x480 to 720x480 (processing images as needed)
-        addStatusMessage('Creating 720x480 folder structure with all files...', 'normal');
-        const conversionPromises = [];
-        
-        for (const [originalPath, newPath] of filesToCopyToNewLocation.entries()) {
-            if (isInImageFolder(originalPath) && isImageFile(originalPath)) {
-                // This is an image file that needs potential conversion
-                const promise = processImageToNewLocation(zip, originalPath, newPath, newZip);
-                conversionPromises.push(promise);
-            } else {
-                // This is a non-image file, just copy it to the new location
-                const promise = copyFileToNewLocation(zip, originalPath, newPath, newZip);
-                conversionPromises.push(promise);
-            }
-        }
-        
-        // Wait for all files to be processed
-        await Promise.all(conversionPromises);
-        
-        // Generate the new zip file
-        addStatusMessage('Creating converted theme file...', 'normal');
-        convertedZip = await newZip.generateAsync({
-            type: 'blob',
-            compression: 'DEFLATE',
-            compressionOptions: {
-                level: 9
-            }
-        });
-        
-        addStatusMessage('Theme conversion completed successfully!', 'success');
-        downloadContainer.style.display = 'block';
-        
-        // Automatically start the download
-        downloadFile();
-        addStatusMessage('Download started automatically', 'success');
-        
-    } catch (error) {
-        addStatusMessage(`Error: ${error.message}`, 'error');
-        console.error(error);
-    }
-}
-
 function readFileAsArrayBuffer(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -353,29 +168,6 @@ function bumpVersion(versionText) {
     }
 }
 
-async function processImage(zip, path, newZip) {
-    try {
-        const imageData = await zip.file(path).async('arraybuffer');
-        addStatusMessage(`Converting image: ${path} using ${conversionType} method`, 'normal');
-        const convertedImage = await resizeImage(imageData, 720, 480);
-        newZip.file(path, convertedImage);
-        
-        processedImages++;
-        updateProgress(processedImages, totalImages);
-        
-        addStatusMessage(`Processed image: ${path}`, 'success');
-    } catch (error) {
-        addStatusMessage(`Failed to process image ${path}: ${error.message}`, 'error');
-        // If there's an error, just copy the original file
-        await copyFile(zip, path, newZip);
-    }
-}
-
-async function copyFile(zip, path, newZip) {
-    const fileData = await zip.file(path).async('arraybuffer');
-    newZip.file(path, fileData);
-}
-
 function isInImageFolder(path) {
     return path.includes('640x480/image/');
 }
@@ -388,6 +180,22 @@ function isInExcludedFolder(path) {
 function isImageFile(path) {
     const ext = path.split('.').pop().toLowerCase();
     return ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext);
+}
+
+async function getImageDimensions(imageData) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            resolve({
+                width: img.width,
+                height: img.height
+            });
+        };
+        img.onerror = () => {
+            reject(new Error('Failed to load image for dimension checking'));
+        };
+        img.src = URL.createObjectURL(new Blob([imageData]));
+    });
 }
 
 async function resizeImage(imageData, targetWidth, targetHeight) {
@@ -502,10 +310,284 @@ async function resizeImage(imageData, targetWidth, targetHeight) {
     });
 }
 
+async function copyFile(zip, path, newZip) {
+    const fileData = await zip.file(path).async('arraybuffer');
+    newZip.file(path, fileData);
+}
+
+async function copyFileWithRename(zip, sourcePath, destinationPath, newZip) {
+    try {
+        const fileData = await zip.file(sourcePath).async('arraybuffer');
+        newZip.file(destinationPath, fileData);
+        addStatusMessage(`Copied file with rename: ${sourcePath} to ${destinationPath}`, 'success');
+    } catch (error) {
+        addStatusMessage(`Failed to copy file with rename ${sourcePath}: ${error.message}`, 'error');
+    }
+}
+
+async function copyFileToNewLocation(zip, originalPath, newPath, newZip) {
+    try {
+        const fileData = await zip.file(originalPath).async('arraybuffer');
+        newZip.file(newPath, fileData);
+        addStatusMessage(`Copied file: ${originalPath} to ${newPath}`, 'normal');
+    } catch (error) {
+        addStatusMessage(`Failed to copy file ${originalPath}: ${error.message}`, 'error');
+    }
+}
+
+async function processImageToNewLocation(zip, originalPath, newPath, newZip, deviceConfig) {
+    try {
+        const imageData = await zip.file(originalPath).async('arraybuffer');
+        
+        // Check if the image is actually 640x480 before converting
+        const dimensions = await getImageDimensions(imageData);
+        
+        if (dimensions.width === deviceConfig.originalWidth && dimensions.height === deviceConfig.originalHeight) {
+            addStatusMessage(`Converting image: ${originalPath} using ${conversionType} method for ${deviceConfig.name}`, 'normal');
+            const convertedImage = await resizeImage(imageData, deviceConfig.width, deviceConfig.height);
+            newZip.file(newPath, convertedImage);
+            
+            processedImages++;
+            updateProgress(processedImages, totalImages);
+            
+            addStatusMessage(`Processed image: ${newPath}`, 'success');
+        } else {
+            addStatusMessage(`Skipping non-${deviceConfig.originalWidth}x${deviceConfig.originalHeight} image: ${originalPath} (${dimensions.width}x${dimensions.height})`, 'normal');
+            // Just copy the original image to the new location without resizing
+            newZip.file(newPath, imageData);
+        }
+    } catch (error) {
+        addStatusMessage(`Failed to process image ${originalPath}: ${error.message}`, 'error');
+    }
+}
+
+async function processIniFile(zip, path, newZip, deviceConfig) {
+    try {
+        let content = await zip.file(path).async('string');
+        
+        // Get original and new dimensions for text replacement
+        const originalWidth = deviceConfig.originalWidth;
+        const originalHeight = deviceConfig.originalHeight;
+        const newWidth = deviceConfig.width;
+        const newHeight = deviceConfig.height;
+        
+        // Look for original resolution values and replace with new ones
+        const originalResolution = `${originalWidth}x${originalHeight}`;
+        const newResolution = `${newWidth}x${newHeight}`;
+        
+        if (content.includes(originalResolution) || content.includes(originalWidth.toString())) {
+            const originalContent = content;
+            
+            // Replace instances of oldResolution with newResolution
+            content = content.replace(new RegExp(originalResolution, 'g'), newResolution);
+            
+            // Replace instances of just the original width that likely refer to width
+            // This is a bit trickier - we want to replace the width but not if it's part of other numbers
+            content = content.replace(new RegExp(`\\b${originalWidth}\\b`, 'g'), newWidth.toString());
+            
+            if (content !== originalContent) {
+                addStatusMessage(`Updated resolution references in INI file: ${path}`, 'success');
+            }
+        }
+        
+        // Write the file back (modified or not)
+        newZip.file(path, content);
+    } catch (error) {
+        addStatusMessage(`Failed to process INI file ${path}: ${error.message}`, 'error');
+    }
+}
+
 function downloadFile() {
     if (!convertedZip) return;
     
+    const deviceConfig = deviceConfigs[selectedDevice];
     const baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
-    const fileName = `RG34XX_${baseName}_3_2_ratio.muxthm`;
+    const fileName = `${deviceConfig.name}_${baseName}_${deviceConfig.width}x${deviceConfig.height}.muxthm`;
     saveAs(convertedZip, fileName);
+}
+
+async function processFile() {
+    if (!selectedFile) return;
+    
+    // Get device configuration
+    const deviceConfig = deviceConfigs[selectedDevice];
+    
+    // Reset UI
+    statusContainer.style.display = 'block';
+    downloadContainer.style.display = 'none';
+    progressContainer.style.display = 'block';
+    statusMessages.innerHTML = '';
+    convertBtn.disabled = true;
+    processedImages = 0;
+    
+    addStatusMessage(`Starting theme conversion process for ${deviceConfig.name} (${deviceConfig.width}x${deviceConfig.height})...`, 'normal');
+    
+    try {
+        // Read the zip file
+        addStatusMessage('Reading theme file...', 'normal');
+        const zipData = await readFileAsArrayBuffer(selectedFile);
+        const zip = await JSZip.loadAsync(zipData);
+        addStatusMessage('Theme file loaded successfully', 'success');
+        
+        // Create new zip for the converted theme
+        const newZip = new JSZip();
+        
+        // Process version.txt
+        addStatusMessage('Checking for version.txt...', 'normal');
+        if (zip.file('version.txt')) {
+            const versionText = await zip.file('version.txt').async('string');
+            addStatusMessage(`Current version: ${versionText}`, 'normal');
+            
+            // Bump version
+            const newVersion = bumpVersion(versionText);
+            addStatusMessage(`Bumping version to: ${newVersion}`, 'normal');
+            newZip.file('version.txt', newVersion);
+        } else {
+            addStatusMessage('Warning: version.txt not found in the theme', 'error');
+            newZip.file('version.txt', '1.0');
+        }
+        
+        // Count images to be processed for progress tracking and create paths map
+        const imageFilePaths = [];
+        const filesToCopyToNewLocation = new Map(); // Map of original path to new path
+        const iniFiles = [];
+        
+        const originalFolderPrefix = `640x480/`;
+        const newFolderPrefix = `${deviceConfig.folderName}/`;
+        
+        zip.forEach((relativePath, zipEntry) => {
+            if (zipEntry.dir) return;
+            
+            // Track images to process
+            if (isInImageFolder(relativePath) && isImageFile(relativePath)) {
+                imageFilePaths.push(relativePath);
+            }
+            
+            // Track files to copy to new resolution folder
+            if (relativePath.startsWith(originalFolderPrefix)) {
+                const newPath = relativePath.replace(originalFolderPrefix, newFolderPrefix);
+                filesToCopyToNewLocation.set(relativePath, newPath);
+            }
+            
+            // Track .ini files for text replacement
+            if (relativePath.endsWith('.ini')) {
+                iniFiles.push(relativePath);
+            }
+        });
+        
+        totalImages = imageFilePaths.length;
+        addStatusMessage(`Found ${totalImages} images to process and ${filesToCopyToNewLocation.size} files to copy to ${newFolderPrefix} folder`, 'normal');
+        
+        // First, copy ALL original files and folders to the new zip
+        addStatusMessage('Copying all original files and folders...', 'normal');
+        
+        // Step 1: Create all directories first to maintain structure
+        const allFolders = new Set();
+        zip.forEach((relativePath, zipEntry) => {
+            if (zipEntry.dir) {
+                allFolders.add(relativePath);
+            } else {
+                // Add parent folders for all files
+                let parentPath = relativePath.substring(0, relativePath.lastIndexOf('/') + 1);
+                while (parentPath) {
+                    allFolders.add(parentPath);
+                    // Move up one level
+                    const lastSlashIndex = parentPath.slice(0, -1).lastIndexOf('/');
+                    if (lastSlashIndex === -1) break;
+                    parentPath = parentPath.substring(0, lastSlashIndex + 1);
+                }
+            }
+        });
+        
+        // Add new resolution folder structure
+        allFolders.forEach(folder => {
+            if (folder.startsWith(originalFolderPrefix)) {
+                allFolders.add(folder.replace(originalFolderPrefix, newFolderPrefix));
+            }
+        });
+        
+        // Create all folders in the zip
+        allFolders.forEach(folder => {
+            newZip.folder(folder);
+        });
+        
+        // Step 2: Copy all files with their content
+        const copyPromises = [];
+        
+        zip.forEach((relativePath, zipEntry) => {
+            if (!zipEntry.dir) {
+                const promise = copyFile(zip, relativePath, newZip);
+                copyPromises.push(promise);
+            }
+        });
+        
+        // Wait for all files to be copied
+        await Promise.all(copyPromises);
+        addStatusMessage('All original files and folders copied successfully', 'success');
+        
+        // Process .ini files to replace resolution references
+        const iniPromises = [];
+        for (const iniPath of iniFiles) {
+            const promise = processIniFile(zip, iniPath, newZip, deviceConfig);
+            iniPromises.push(promise);
+        }
+        
+        await Promise.all(iniPromises);
+        addStatusMessage('Processed all .ini files', 'success');
+        
+        // Copy files from 640x480 to new resolution folder (processing images as needed)
+        addStatusMessage(`Creating ${newFolderPrefix} folder structure with all files...`, 'normal');
+        const conversionPromises = [];
+        
+        for (const [originalPath, newPath] of filesToCopyToNewLocation.entries()) {
+            // Special handling for logo.png in the 640x480 folder structure
+            if (originalPath.endsWith('/logo.png') && selectedDevice === 'rgcubexx') {
+                const dirPath = originalPath.substring(0, originalPath.lastIndexOf('/') + 1);
+                const possibleCubeLogoPath = dirPath + 'logocube.png';
+                
+                if (zip.file(possibleCubeLogoPath)) {
+                    // Use logocube.png instead of logo.png for RG CUBEXX
+                    addStatusMessage(`Using logocube.png instead of logo.png for ${dirPath} in ${deviceConfig.name}`, 'success');
+                    const promise = copyFileWithRename(zip, possibleCubeLogoPath, newPath, newZip);
+                    conversionPromises.push(promise);
+                    continue;
+                }
+            }
+            
+            // Normal processing for non-logo files or if cube logo doesn't exist
+            if (isInImageFolder(originalPath) && isImageFile(originalPath)) {
+                // This is an image file that needs potential conversion
+                const promise = processImageToNewLocation(zip, originalPath, newPath, newZip, deviceConfig);
+                conversionPromises.push(promise);
+            } else {
+                // This is a non-image file, just copy it to the new location
+                const promise = copyFileToNewLocation(zip, originalPath, newPath, newZip);
+                conversionPromises.push(promise);
+            }
+        }
+        
+        // Wait for all files to be processed
+        await Promise.all(conversionPromises);
+        
+        // Generate the new zip file
+        addStatusMessage('Creating converted theme file...', 'normal');
+        convertedZip = await newZip.generateAsync({
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: {
+                level: 9
+            }
+        });
+        
+        addStatusMessage('Theme conversion completed successfully!', 'success');
+        downloadContainer.style.display = 'block';
+        
+        // Automatically start the download
+        downloadFile();
+        addStatusMessage('Download started automatically', 'success');
+        
+    } catch (error) {
+        addStatusMessage(`Error: ${error.message}`, 'error');
+        console.error(error);
+    }
 }

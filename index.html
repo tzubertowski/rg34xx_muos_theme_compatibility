@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RG34XX MuOS Theme Converter</title>
+    <title>Anbernic RG 34XX & RG CubeXX MuOS Theme Converter</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -11,10 +11,10 @@
 <body>
     <header>
         <div class="header-content">
-            <img src="images/logo.png" alt="MuOS Logo" class="logo">
+            <img src="images/logo.png" alt="MuOS Logo" class="logo" id="device-logo">
             <div class="title-container">
-                <h1>RG34XX MuOS Theme Converter</h1>
-                <p class="subtitle">Convert your MuOS themes to fit Anbernic RG34XX 3:2 Aspect ratio screen</p>
+                <h1>Anbernic RG 34XX & RG CubeXX MuOS Theme Converter</h1>
+                <p class="subtitle">Convert your themes to 3:2 or 1:1 aspect ratio</p>
             </div>
         </div>
     </header>
@@ -23,9 +23,35 @@
         <div class="features-list">
             <p>This tool will:</p>
             <ul>
-                <li>Process .muxthm files and convert them into 3:2 aspect ratio</li>
+                <li>Process .muxthm files (which are actually .zip files) and convert them to fit your device</li>
+                <li>Keep original 640x480 images intact</li>
+                <li>Create a new folder with the proper resolution for your device</li>
+                <li>Only resize images that are exactly 640x480 pixels in size</li>
+                <li>Replace resolution references in all .ini configuration files</li>
+                <li>Find and use device-specific images in theme directories</li>
+                <li>Convert all images including those in the muxlaunch subfolder</li>
                 <li>Automatically download the converted theme when finished</li>
             </ul>
+        </div>
+
+        <div class="device-selection">
+            <p>Select your device:</p>
+            <div class="device-options">
+                <label class="device-option">
+                    <input type="radio" name="device-type" value="rg34xx" checked>
+                    <div class="device-info">
+                        <div class="device-name">RG34XX</div>
+                        <div class="device-resolution">720×480 (3:2)</div>
+                    </div>
+                </label>
+                <label class="device-option">
+                    <input type="radio" name="device-type" value="rgcubexx">
+                    <div class="device-info">
+                        <div class="device-name">RG CUBEXX</div>
+                        <div class="device-resolution">720×720 (1:1)</div>
+                    </div>
+                </label>
+            </div>
         </div>
 
         <div class="upload-container" id="upload-container">
@@ -79,7 +105,7 @@
     </div>
 
     <footer>
-        <p>RG34XX MuOS Theme Converter by <a href="https://github.com/tzubertowski/">Prosty</a> &copy; 2025</p>
+        <p>RG34XX MuOS Theme Converter &copy; 2025</p>
     </footer>
 
     <script src="script.js"></script>

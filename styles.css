@@ -1,4 +1,66 @@
-.conversion-options {
+.device-selection {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.device-selection p {
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.device-options {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.device-option {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #EEEEEE;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.device-option:hover {
+    border-color: var(--secondary-color);
+    box-shadow: 0 2px 8px rgba(255, 182, 193, 0.2);
+}
+
+.device-option input[type="radio"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+.device-option input[type="radio"]:checked ~ .device-info .device-name {
+    color: var(--button-color);
+    font-weight: 600;
+}
+
+.device-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.device-name {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.device-resolution {
+    font-size: 0.9rem;
+    color: #888888;
+}.conversion-options {
     margin: 20px 0;
     padding: 15px;
     background-color: rgba(255, 255, 255, 0.5);
