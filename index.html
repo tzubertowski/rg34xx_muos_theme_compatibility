@@ -3,235 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>34XX Theme Compatibility Converter</title>
+    <title>RG34XX MuOS Theme Converter</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <style>
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2980b9;
-            --background-color: #f9f9f9;
-            --text-color: #333;
-            --border-color: #ddd;
-            --success-color: #27ae60;
-            --error-color: #e74c3c;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .upload-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 40px 20px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .upload-container.drag-over {
-            border-color: var(--primary-color);
-            background-color: rgba(52, 152, 219, 0.05);
-        }
-
-        .file-input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .upload-icon {
-            font-size: 48px;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .upload-text {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .file-info {
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 12px 24px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: inline-block;
-            margin-top: 15px;
-        }
-
-        .btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .status-container {
-            margin-top: 30px;
-            display: none;
-        }
-
-        .status-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .status-messages {
-            background-color: #f5f5f5;
-            border-radius: 4px;
-            padding: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-
-        .status-message {
-            margin-bottom: 5px;
-        }
-
-        .status-message:last-child {
-            margin-bottom: 0;
-        }
-
-        .status-success {
-            color: var(--success-color);
-        }
-
-        .status-error {
-            color: var(--error-color);
-        }
-
-        .download-container {
-            margin-top: 30px;
-            text-align: center;
-            display: none;
-        }
-
-        .features-list {
-            margin: 20px 0;
-        }
-
-        .features-list li {
-            margin-bottom: 8px;
-            position: relative;
-            padding-left: 20px;
-        }
-
-        .features-list li:before {
-            content: "•";
-            color: var(--primary-color);
-            position: absolute;
-            left: 0;
-            font-size: 1.2rem;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #777;
-            font-size: 0.9rem;
-        }
-
-        .progress-container {
-            width: 100%;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background-color: #eee;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background-color: var(--primary-color);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            text-align: center;
-            margin-top: 5px;
-            font-size: 0.9rem;
-            color: #666;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>34XX Theme Compatibility Converter</h1>
-            <p class="subtitle">Convert your themes to the latest compatibility format</p>
-        </header>
+    <header>
+        <div class="header-content">
+            <img src="images/logo.png" alt="MuOS Logo" class="logo">
+            <div class="title-container">
+                <h1>RG34XX MuOS Theme Converter</h1>
+                <p class="subtitle">Convert your themes to the latest compatibility format</p>
+            </div>
+        </div>
+    </header>
 
+    <div class="container">
         <div class="features-list">
             <p>This tool will:</p>
             <ul>
-                <li>Process .muxthm files (which are actually .zip files)</li>
-                <li>Bump the version number in the version.txt file</li>
-                <li>Convert all images in the 640x480/image/ folder (and subfolders) to 720x480px resolution</li>
-                <li>Preserve images in the 640x480/image/wall/muxlaunch/ folder</li>
-                <li>Package everything back into a new .muxthm file</li>
+                <li>Process .muxthm files (which are actually .zip files) and convert them into 3:2 aspect ratio</li>
+                <li>Keep original 640x480 images intact</li>
+                <li>Create a new 720x480 folder with all content copied from 640x480</li>
+                <li>Only resize images that are exactly 640x480 pixels in size</li>
+                <li>Replace "640" with "720" in all .ini configuration files</li>
+                <li>Convert all images including those in the muxlaunch subfolder</li>
+                <li>Automatically download the converted theme when finished</li>
             </ul>
         </div>
 
@@ -240,6 +38,27 @@
             <div class="upload-icon">📁</div>
             <div class="upload-text">Drag & drop your .muxthm file here</div>
             <div class="file-info">or click to browse</div>
+        </div>
+        
+        <div class="conversion-options">
+            <p>Choose image conversion method:</p>
+            <div class="option-buttons">
+                <label>
+                    <input type="radio" name="conversion-type" value="zoom" checked>
+                    <span class="option-label">Zoom</span>
+                    <span class="option-description">Fill the entire frame, may crop parts of the image</span>
+                </label>
+                <label>
+                    <input type="radio" name="conversion-type" value="crop">
+                    <span class="option-label">Crop</span>
+                    <span class="option-description">Crop from center to fit the new aspect ratio</span>
+                </label>
+                <label>
+                    <input type="radio" name="conversion-type" value="fit">
+                    <span class="option-label">Fit</span>
+                    <span class="option-description">Fit entire image, may add black bars</span>
+                </label>
+            </div>
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
@@ -265,280 +84,9 @@
     </div>
 
     <footer>
-        <p>34XX Theme Compatibility Converter &copy; 2025</p>
+        <p>RG34XX MuOS Theme Converter &copy; 2025</p>
     </footer>
 
-    <script>
-        // DOM Elements
-        const fileInput = document.getElementById('file-input');
-        const convertBtn = document.getElementById('convert-btn');
-        const uploadContainer = document.getElementById('upload-container');
-        const statusContainer = document.getElementById('status-container');
-        const statusMessages = document.getElementById('status-messages');
-        const downloadContainer = document.getElementById('download-container');
-        const downloadBtn = document.getElementById('download-btn');
-        const progressContainer = document.getElementById('progress-container');
-        const progressFill = document.getElementById('progress-fill');
-        const progressText = document.getElementById('progress-text');
-
-        // Variables
-        let selectedFile = null;
-        let convertedZip = null;
-        let processedImages = 0;
-        let totalImages = 0;
-
-        // Event Listeners
-        fileInput.addEventListener('change', handleFileSelect);
-        convertBtn.addEventListener('click', processFile);
-        downloadBtn.addEventListener('click', downloadFile);
-        uploadContainer.addEventListener('dragover', handleDragOver);
-        uploadContainer.addEventListener('dragleave', handleDragLeave);
-        uploadContainer.addEventListener('drop', handleDrop);
-
-        // Functions
-        function handleFileSelect(event) {
-            selectedFile = event.target.files[0];
-            if (selectedFile) {
-                convertBtn.disabled = false;
-                document.querySelector('.upload-text').textContent = `Selected: ${selectedFile.name}`;
-            }
-        }
-
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            uploadContainer.classList.add('drag-over');
-        }
-
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            uploadContainer.classList.remove('drag-over');
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            uploadContainer.classList.remove('drag-over');
-            
-            const files = event.dataTransfer.files;
-            if (files.length > 0) {
-                selectedFile = files[0];
-                fileInput.files = files;
-                convertBtn.disabled = false;
-                document.querySelector('.upload-text').textContent = `Selected: ${selectedFile.name}`;
-            }
-        }
-
-        function addStatusMessage(message, type = 'normal') {
-            const msgElement = document.createElement('div');
-            msgElement.classList.add('status-message');
-            
-            if (type === 'success') {
-                msgElement.classList.add('status-success');
-            } else if (type === 'error') {
-                msgElement.classList.add('status-error');
-            }
-            
-            msgElement.textContent = message;
-            statusMessages.appendChild(msgElement);
-            statusMessages.scrollTop = statusMessages.scrollHeight;
-        }
-
-        function updateProgress(processed, total) {
-            const percentage = Math.round((processed / total) * 100);
-            progressFill.style.width = `${percentage}%`;
-            progressText.textContent = `Processing: ${percentage}%`;
-        }
-
-        async function processFile() {
-            if (!selectedFile) return;
-            
-            // Reset UI
-            statusContainer.style.display = 'block';
-            downloadContainer.style.display = 'none';
-            progressContainer.style.display = 'block';
-            statusMessages.innerHTML = '';
-            convertBtn.disabled = true;
-            processedImages = 0;
-            
-            addStatusMessage('Starting theme conversion process...', 'normal');
-            
-            try {
-                // Read the zip file
-                addStatusMessage('Reading theme file...', 'normal');
-                const zipData = await readFileAsArrayBuffer(selectedFile);
-                const zip = await JSZip.loadAsync(zipData);
-                addStatusMessage('Theme file loaded successfully', 'success');
-                
-                // Create new zip for the converted theme
-                const newZip = new JSZip();
-                
-                // Process version.txt
-                addStatusMessage('Checking for version.txt...', 'normal');
-                if (zip.file('version.txt')) {
-                    const versionText = await zip.file('version.txt').async('string');
-                    addStatusMessage(`Current version: ${versionText}`, 'normal');
-                    
-                    // Bump version
-                    const newVersion = bumpVersion(versionText);
-                    addStatusMessage(`Bumping version to: ${newVersion}`, 'normal');
-                    newZip.file('version.txt', newVersion);
-                } else {
-                    addStatusMessage('Warning: version.txt not found in the theme', 'error');
-                    newZip.file('version.txt', '1.0');
-                }
-                
-                // Count images to be processed for progress tracking
-                const imageFilePaths = [];
-                zip.forEach((relativePath, zipEntry) => {
-                    if (!zipEntry.dir && isInImageFolder(relativePath) && !isInExcludedFolder(relativePath) && isImageFile(relativePath)) {
-                        imageFilePaths.push(relativePath);
-                    }
-                });
-                
-                totalImages = imageFilePaths.length;
-                addStatusMessage(`Found ${totalImages} images to process`, 'normal');
-                
-                // Process all files
-                const promises = [];
-                
-                zip.forEach((relativePath, zipEntry) => {
-                    if (zipEntry.dir) {
-                        // Create directory in the new zip
-                        newZip.folder(relativePath);
-                        return;
-                    }
-                    
-                    let promise;
-                    
-                    if (isInImageFolder(relativePath) && !isInExcludedFolder(relativePath) && isImageFile(relativePath)) {
-                        // Convert image
-                        promise = processImage(zip, relativePath, newZip);
-                    } else {
-                        // Copy file as is
-                        promise = copyFile(zip, relativePath, newZip);
-                    }
-                    
-                    promises.push(promise);
-                });
-                
-                // Wait for all files to be processed
-                await Promise.all(promises);
-                
-                // Generate the new zip file
-                addStatusMessage('Creating converted theme file...', 'normal');
-                convertedZip = await newZip.generateAsync({
-                    type: 'blob',
-                    compression: 'DEFLATE',
-                    compressionOptions: {
-                        level: 9
-                    }
-                });
-                
-                addStatusMessage('Theme conversion completed successfully!', 'success');
-                downloadContainer.style.display = 'block';
-                
-            } catch (error) {
-                addStatusMessage(`Error: ${error.message}`, 'error');
-                console.error(error);
-            }
-        }
-        
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = event => resolve(event.target.result);
-                reader.onerror = error => reject(error);
-                reader.readAsArrayBuffer(file);
-            });
-        }
-        
-        function bumpVersion(versionText) {
-            // Simple version bumping logic
-            const version = versionText.trim();
-            const versionParts = version.split('.');
-            
-            if (versionParts.length >= 2) {
-                // If it's a semantic version, bump the minor version
-                const major = parseInt(versionParts[0], 10) || 0;
-                const minor = parseInt(versionParts[1], 10) || 0;
-                return `${major}.${minor + 1}`;
-            } else if (!isNaN(parseInt(version, 10))) {
-                // If it's just a number, increment it
-                return (parseInt(version, 10) + 1).toString();
-            } else {
-                // If it's something else, append "-updated"
-                return version + "-updated";
-            }
-        }
-        
-        async function processImage(zip, path, newZip) {
-            try {
-                const imageData = await zip.file(path).async('arraybuffer');
-                const convertedImage = await resizeImage(imageData, 720, 480);
-                newZip.file(path, convertedImage);
-                
-                processedImages++;
-                updateProgress(processedImages, totalImages);
-                
-                addStatusMessage(`Processed image: ${path}`, 'normal');
-            } catch (error) {
-                addStatusMessage(`Failed to process image ${path}: ${error.message}`, 'error');
-                // If there's an error, just copy the original file
-                await copyFile(zip, path, newZip);
-            }
-        }
-        
-        async function copyFile(zip, path, newZip) {
-            const fileData = await zip.file(path).async('arraybuffer');
-            newZip.file(path, fileData);
-        }
-        
-        function isInImageFolder(path) {
-            return path.includes('640x480/image/');
-        }
-        
-        function isInExcludedFolder(path) {
-            return path.includes('640x480/image/wall/muxlaunch');
-        }
-        
-        function isImageFile(path) {
-            const ext = path.split('.').pop().toLowerCase();
-            return ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext);
-        }
-        
-        async function resizeImage(imageData, targetWidth, targetHeight) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = targetWidth;
-                    canvas.height = targetHeight;
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                    
-                    canvas.toBlob(blob => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.onerror = reject;
-                        reader.readAsArrayBuffer(blob);
-                    }, 'image/png');
-                };
-                
-                img.onerror = () => reject(new Error('Failed to load image'));
-                img.src = URL.createObjectURL(new Blob([imageData]));
-            });
-        }
-        
-        function downloadFile() {
-            if (!convertedZip) return;
-            
-            const baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
-            const fileName = `RG34XX_${baseName}_converted.muxthm`;
-            saveAs(convertedZip, fileName);
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

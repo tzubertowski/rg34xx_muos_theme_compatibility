@@ -1,0 +1,338 @@
+.conversion-options {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.conversion-options p {
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.option-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.option-buttons label {
+    flex: 1 1 30%;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #EEEEEE;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.option-buttons label:hover {
+    border-color: var(--secondary-color);
+    box-shadow: 0 2px 8px rgba(255, 182, 193, 0.2);
+}
+
+.option-buttons input[type="radio"] {
+    display: none;
+}
+
+.option-buttons input[type="radio"]:checked + .option-label {
+    color: var(--button-color);
+    font-weight: 600;
+}
+
+.option-buttons input[type="radio"]:checked ~ .option-description {
+    color: #555555;
+}
+
+.option-buttons input[type="radio"]:checked + .option-label:before {
+    content: "✓ ";
+}
+
+.option-label {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.option-description {
+    font-size: 0.85rem;
+    color: #888888;
+    line-height: 1.4;
+}:root {
+    --primary-color: #FFD1DC; /* Lighter pastel pink */
+    --secondary-color: #FFB6C1; /* Light pink */
+    --button-color: #E9004C; /* Deep pink for button */
+    --background-color: #FFF9FA; /* Very very light pink */
+    --text-color: #5E5E5E; /* Dark gray */
+    --border-color: #FFE5E9; /* Very light pink border */
+    --success-color: #77DD77; /* Pastel green */
+    --error-color: #FF6961; /* Pastel red */
+    --header-gradient-start: #FFD1DC;
+    --header-gradient-end: #FFB6C1;
+    --main-section-bg: #FFF5F7; /* Very light pink for main section */
+    --container-bg: #FFCCD9; /* Distinctly darker pastel pink for container background */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    border: 1px solid var(--border-color);
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.logo {
+    height: 150px;
+    width: auto;
+}
+
+.title-container {
+    text-align: left;
+}
+
+h1 {
+    color: #444444;
+    margin-bottom: 5px;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.subtitle {
+    color: #888;
+    font-size: 1.1rem;
+}
+
+.upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 40px 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.upload-container.drag-over {
+    border-color: var(--secondary-color);
+    background-color: rgba(255, 182, 193, 0.15);
+}
+
+.file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: var(--secondary-color);
+    margin-bottom: 15px;
+}
+
+.upload-text {
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.file-info {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.btn {
+    background-color: var(--button-color);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin-top: 15px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(233, 0, 76, 0.3);
+}
+
+.btn:hover {
+    background-color: #C2003F; /* Even darker on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(233, 0, 76, 0.4);
+}
+
+.btn:disabled {
+    background-color: #CCCCCC;
+    color: #888888;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.status-container {
+    margin-top: 30px;
+    display: none;
+}
+
+.status-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+.status-messages {
+    background-color: #fafafa;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+}
+
+.status-message {
+    margin-bottom: 5px;
+}
+
+.status-message:last-child {
+    margin-bottom: 0;
+}
+
+.status-success {
+    color: var(--success-color);
+}
+
+.status-error {
+    color: var(--error-color);
+}
+
+.download-container {
+    margin-top: 30px;
+    text-align: center;
+    display: none;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: rgba(119, 221, 119, 0.1);
+    border: 1px solid var(--success-color);
+}
+
+.features-list {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.features-list li {
+    margin-bottom: 8px;
+    position: relative;
+    padding-left: 20px;
+}
+
+.features-list li:before {
+    content: "•";
+    color: var(--secondary-color);
+    position: absolute;
+    left: 0;
+    font-size: 1.2rem;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.progress-container {
+    width: 100%;
+    margin-top: 20px;
+    display: none;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+@media (max-width: 600px) {
+    .header-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .title-container {
+        text-align: center;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .logo {
+        height: 60px;
+    }
+}
