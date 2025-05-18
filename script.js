@@ -1,26 +1,19 @@
-// Initialize the device logo and selection when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Set the radio button based on the stored selection
-    const savedDevice = localStorage.getItem('selectedDevice') || 'rg34xx';
-    document.querySelector(`input[name="device-type"][value="${savedDevice}"]`).checked = true;
-    
-    // Set initial logo based on saved device
-    updateDeviceLogo();
-});// DOM Elements
-const fileInput = document.getElementById('file-input');
-const convertBtn = document.getElementById('convert-btn');
-const uploadContainer = document.getElementById('upload-container');
-const statusContainer = document.getElementById('status-container');
-const statusMessages = document.getElementById('status-messages');
-const downloadContainer = document.getElementById('download-container');
-const downloadBtn = document.getElementById('download-btn');
-const progressContainer = document.getElementById('progress-container');
-const progressFill = document.getElementById('progress-fill');
-const progressText = document.getElementById('progress-text');
+// DOM Elements
+let fileInput;
+let convertBtn;
+let uploadContainer;
+let statusContainer;
+let statusMessages;
+let downloadContainer;
+let downloadBtn;
+let progressContainer;
+let progressFill;
+let progressText;
 
 // Variables
-let selectedFile = null;
-let convertedZip = null;
+let selectedFiles = []; // Array to store multiple files
+let convertedZips = []; // Array to store multiple converted zips
+let currentFileIndex = 0; // Index of the file currently being processed
 let processedImages = 0;
 let totalImages = 0;
 let conversionType = "zoom"; // Default conversion type
@@ -48,48 +41,85 @@ const deviceConfigs = {
     }
 };
 
-// Event Listeners
-fileInput.addEventListener('change', handleFileSelect);
-convertBtn.addEventListener('click', processFile);
-downloadBtn.addEventListener('click', downloadFile);
-uploadContainer.addEventListener('dragover', handleDragOver);
-uploadContainer.addEventListener('dragleave', handleDragLeave);
-uploadContainer.addEventListener('drop', handleDrop);
-
-// Add event listeners for conversion type radio buttons
-document.querySelectorAll('input[name="conversion-type"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        conversionType = this.value;
+// Initialize all DOM elements and event listeners when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DOM element references
+    fileInput = document.getElementById('file-input');
+    convertBtn = document.getElementById('convert-btn');
+    uploadContainer = document.getElementById('upload-container');
+    statusContainer = document.getElementById('status-container');
+    statusMessages = document.getElementById('status-messages');
+    downloadContainer = document.getElementById('download-container');
+    downloadBtn = document.getElementById('download-btn');
+    progressContainer = document.getElementById('progress-container');
+    progressFill = document.getElementById('progress-fill');
+    progressText = document.getElementById('progress-text');
+    
+    // Set up event listeners
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+    
+    if (convertBtn) {
+        convertBtn.addEventListener('click', processAllFiles);
+    }
+    
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadFile);
+    }
+    
+    if (uploadContainer) {
+        uploadContainer.addEventListener('dragover', handleDragOver);
+        uploadContainer.addEventListener('dragleave', handleDragLeave);
+        uploadContainer.addEventListener('drop', handleDrop);
+    }
+    
+    // Add event listeners for conversion type radio buttons
+    document.querySelectorAll('input[name="conversion-type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            conversionType = this.value;
+        });
     });
-});
-
-// Add event listeners for device type radio buttons
-document.querySelectorAll('input[name="device-type"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        selectedDevice = this.value;
-        // Save selection to localStorage
-        localStorage.setItem('selectedDevice', selectedDevice);
-        // Update logo based on device selection
-        updateDeviceLogo();
+    
+    // Add event listeners for device type radio buttons
+    document.querySelectorAll('input[name="device-type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            selectedDevice = this.value;
+            // Save selection to localStorage
+            localStorage.setItem('selectedDevice', selectedDevice);
+            // Update logo based on device selection
+            updateDeviceLogo();
+        });
     });
+    
+    // Set the radio button based on the stored selection
+    const savedDevice = localStorage.getItem('selectedDevice') || 'rg34xx';
+    const deviceRadio = document.querySelector(`input[name="device-type"][value="${savedDevice}"]`);
+    if (deviceRadio) {
+        deviceRadio.checked = true;
+    }
+    
+    // Set initial logo based on saved device
+    updateDeviceLogo();
 });
 
 // Function to update the logo based on selected device
 function updateDeviceLogo() {
     const deviceLogo = document.getElementById('device-logo');
-    if (selectedDevice === 'rgcubexx') {
-        deviceLogo.src = 'images/logocube.png';
-    } else {
-        deviceLogo.src = 'images/logo.png';
+    if (deviceLogo) {
+        if (selectedDevice === 'rgcubexx') {
+            deviceLogo.src = 'images/logocube.png';
+        } else {
+            deviceLogo.src = 'images/logo.png';
+        }
     }
 }
 
-// Functions
+// File Handling Functions
 function handleFileSelect(event) {
-    selectedFile = event.target.files[0];
-    if (selectedFile) {
-        convertBtn.disabled = false;
-        document.querySelector('.upload-text').textContent = `Selected: ${selectedFile.name}`;
+    if (event.target.files && event.target.files.length > 0) {
+        selectedFiles = Array.from(event.target.files);
+        updateFileSelectionUI();
     }
 }
 
@@ -111,15 +141,76 @@ function handleDrop(event) {
     uploadContainer.classList.remove('drag-over');
     
     const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        selectedFile = files[0];
+    if (files && files.length > 0) {
+        selectedFiles = Array.from(files);
         fileInput.files = files;
-        convertBtn.disabled = false;
-        document.querySelector('.upload-text').textContent = `Selected: ${selectedFile.name}`;
+        updateFileSelectionUI();
+    }
+}
+
+function updateFileSelectionUI() {
+    if (selectedFiles && selectedFiles.length > 0) {
+        // Enable the convert button
+        if (convertBtn) {
+            convertBtn.disabled = false;
+        }
+        
+        // Create or update file list display
+        let fileListContainer = document.querySelector('.file-list');
+        if (!fileListContainer) {
+            fileListContainer = document.createElement('div');
+            fileListContainer.className = 'file-list';
+            if (uploadContainer) {
+                uploadContainer.appendChild(fileListContainer);
+            }
+        } else {
+            fileListContainer.innerHTML = '';
+        }
+        
+        const uploadText = document.querySelector('.upload-text');
+        if (uploadText) {
+            if (selectedFiles.length === 1) {
+                uploadText.textContent = `Selected: ${selectedFiles[0].name}`;
+                
+                // Add the single file to the list
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-list-item';
+                fileItem.textContent = selectedFiles[0].name;
+                fileListContainer.appendChild(fileItem);
+            } else {
+                uploadText.textContent = `Selected: ${selectedFiles.length} files`;
+                
+                // Add all files to the list
+                selectedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-list-item';
+                    fileItem.textContent = file.name;
+                    fileListContainer.appendChild(fileItem);
+                });
+            }
+        }
+    } else {
+        // Disable the convert button
+        if (convertBtn) {
+            convertBtn.disabled = true;
+        }
+        
+        const uploadText = document.querySelector('.upload-text');
+        if (uploadText) {
+            uploadText.textContent = 'Drag & drop your .muxthm files here';
+        }
+        
+        // Remove file list if it exists
+        const fileListContainer = document.querySelector('.file-list');
+        if (fileListContainer) {
+            fileListContainer.remove();
+        }
     }
 }
 
 function addStatusMessage(message, type = 'normal') {
+    if (!statusMessages) return;
+    
     const msgElement = document.createElement('div');
     msgElement.classList.add('status-message');
     
@@ -135,6 +226,8 @@ function addStatusMessage(message, type = 'normal') {
 }
 
 function updateProgress(processed, total) {
+    if (!progressFill || !progressText) return;
+    
     const percentage = Math.round((processed / total) * 100);
     progressFill.style.width = `${percentage}%`;
     progressText.textContent = `Processing: ${percentage}%`;
@@ -397,35 +490,77 @@ async function processIniFile(zip, path, newZip, deviceConfig) {
     }
 }
 
-function downloadFile() {
-    if (!convertedZip) return;
-    
-    const deviceConfig = deviceConfigs[selectedDevice];
-    const baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
-    const fileName = `${deviceConfig.name}_${baseName}_${deviceConfig.width}x${deviceConfig.height}.muxthm`;
-    saveAs(convertedZip, fileName);
+function generateOutputFilename(originalFilename, deviceConfig) {
+    const baseName = originalFilename.replace(/\.[^/.]+$/, '');
+    return `${deviceConfig.name}_${baseName}_${deviceConfig.width}x${deviceConfig.height}.muxthm`;
 }
 
-async function processFile() {
-    if (!selectedFile) return;
+// Main processing functions
+async function processAllFiles() {
+    if (!selectedFiles || selectedFiles.length === 0) {
+        addStatusMessage('No files selected. Please select at least one theme file.', 'error');
+        return;
+    }
     
+    // Reset UI
+    if (statusContainer) statusContainer.style.display = 'block';
+    if (downloadContainer) downloadContainer.style.display = 'none';
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (statusMessages) statusMessages.innerHTML = '';
+    if (convertBtn) convertBtn.disabled = true;
+    
+    convertedZips = [];
+    currentFileIndex = 0;
+    
+    // Update batch success message based on number of files
+    const batchSuccessMsg = document.querySelector('.batch-success-message');
+    if (batchSuccessMsg) {
+        if (selectedFiles.length === 1) {
+            batchSuccessMsg.textContent = "Your theme has been successfully converted!";
+        } else {
+            batchSuccessMsg.textContent = `Your ${selectedFiles.length} themes have been successfully converted!`;
+        }
+    }
+    
+    addStatusMessage(`Starting batch conversion of ${selectedFiles.length} theme files...`, 'normal');
+    
+    // Process each file sequentially
+    await processNextFile();
+}
+
+async function processNextFile() {
+    if (currentFileIndex >= selectedFiles.length) {
+        // All files are processed
+        addStatusMessage('All theme files have been successfully converted!', 'success');
+        if (downloadContainer) downloadContainer.style.display = 'block';
+        if (convertBtn) convertBtn.disabled = false;
+        return;
+    }
+    
+    const currentFile = selectedFiles[currentFileIndex];
+    addStatusMessage(`Processing file ${currentFileIndex + 1} of ${selectedFiles.length}: ${currentFile.name}`, 'normal');
+    
+    try {
+        await processFile(currentFile);
+        currentFileIndex++;
+        await processNextFile();
+    } catch (error) {
+        addStatusMessage(`Error processing ${currentFile.name}: ${error.message}`, 'error');
+        currentFileIndex++;
+        await processNextFile();
+    }
+}
+
+async function processFile(file) {
     // Get device configuration
     const deviceConfig = deviceConfigs[selectedDevice];
     
-    // Reset UI
-    statusContainer.style.display = 'block';
-    downloadContainer.style.display = 'none';
-    progressContainer.style.display = 'block';
-    statusMessages.innerHTML = '';
-    convertBtn.disabled = true;
     processedImages = 0;
-    
-    addStatusMessage(`Starting theme conversion process for ${deviceConfig.name} (${deviceConfig.width}x${deviceConfig.height})...`, 'normal');
     
     try {
         // Read the zip file
-        addStatusMessage('Reading theme file...', 'normal');
-        const zipData = await readFileAsArrayBuffer(selectedFile);
+        addStatusMessage(`Reading theme file: ${file.name}...`, 'normal');
+        const zipData = await readFileAsArrayBuffer(file);
         const zip = await JSZip.loadAsync(zipData);
         addStatusMessage('Theme file loaded successfully', 'success');
         
@@ -570,8 +705,8 @@ async function processFile() {
         await Promise.all(conversionPromises);
         
         // Generate the new zip file
-        addStatusMessage('Creating converted theme file...', 'normal');
-        convertedZip = await newZip.generateAsync({
+        addStatusMessage(`Creating converted theme file for ${file.name}...`, 'normal');
+        const convertedZip = await newZip.generateAsync({
             type: 'blob',
             compression: 'DEFLATE',
             compressionOptions: {
@@ -579,15 +714,54 @@ async function processFile() {
             }
         });
         
-        addStatusMessage('Theme conversion completed successfully!', 'success');
-        downloadContainer.style.display = 'block';
+        // Add to converted zips array with filename
+        convertedZips.push({
+            blob: convertedZip,
+            name: generateOutputFilename(file.name, deviceConfig)
+        });
         
-        // Automatically start the download
-        downloadFile();
-        addStatusMessage('Download started automatically', 'success');
+        addStatusMessage(`Theme ${file.name} conversion completed successfully!`, 'success');
         
     } catch (error) {
         addStatusMessage(`Error: ${error.message}`, 'error');
         console.error(error);
+        throw error; // Re-throw to let the batch processor handle it
+    }
+}
+
+function downloadFile() {
+    if (!convertedZips || convertedZips.length === 0) {
+        addStatusMessage('No converted files to download.', 'error');
+        return;
+    }
+    
+    if (convertedZips.length === 1) {
+        // Single file download
+        saveAs(convertedZips[0].blob, convertedZips[0].name);
+        addStatusMessage(`Downloaded: ${convertedZips[0].name}`, 'success');
+    } else {
+        // Multiple files - create a zip containing all converted themes
+        const batchZip = new JSZip();
+        
+        // Add each converted file to the batch zip
+        convertedZips.forEach(file => {
+            batchZip.file(file.name, file.blob);
+        });
+        
+        // Generate the batch zip file
+        batchZip.generateAsync({
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: {
+                level: 9
+            }
+        }).then(content => {
+            // Get device configuration
+            const deviceConfig = deviceConfigs[selectedDevice];
+            // Save the batch zip
+            const batchFilename = `${deviceConfig.name}_ThemesBatch_${new Date().toISOString().slice(0,10)}.zip`;
+            saveAs(content, batchFilename);
+            addStatusMessage(`Downloaded batch of ${convertedZips.length} themes as: ${batchFilename}`, 'success');
+        });
     }
 }

@@ -20,15 +20,8 @@
     </header>
 
     <div class="container">
-        <div class="features-list">
-            <p>This tool will:</p>
-            <ul>
-                <li>Process .muxthm files and convert them to fit your device</li>
-                <li>Automatically download the converted theme when finished</li>
-            </ul>
-
-            <br>
-            <p>I highly recommend experimenting with Zoom, Crop and Fit settings for best results depending on the theme.</p>
+        <div class="tool-description">
+            <p>This tool converts MuOS themes for Anbernic RG34XX (720×480) or RG CUBEXX (720×720) while preserving original files.</p>
         </div>
         
         <div class="device-selection">
@@ -52,10 +45,10 @@
         </div>
 
         <div class="upload-container" id="upload-container">
-            <input type="file" class="file-input" id="file-input" accept=".muxthm,.zip">
+            <input type="file" class="file-input" id="file-input" accept=".muxthm,.zip" multiple>
             <div class="upload-icon">📁</div>
-            <div class="upload-text">Drag & drop your .muxthm file here</div>
-            <div class="file-info">or click to browse</div>
+            <div class="upload-text">Drag & drop your .muxthm files here</div>
+            <div class="file-info">or click to browse (multiple files supported)</div>
         </div>
         
         <div class="conversion-options">
@@ -80,7 +73,7 @@
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
-            <button class="btn" id="convert-btn" disabled>Convert Theme</button>
+            <button class="btn" id="convert-btn">Convert Theme</button>
         </div>
 
         <div class="progress-container" id="progress-container">
@@ -96,7 +89,7 @@
         </div>
 
         <div class="download-container" id="download-container">
-            <p>Your theme has been successfully converted!</p>
+            <p class="batch-success-message">Your theme has been successfully converted!</p>
             <button class="btn" id="download-btn">Download Converted Theme</button>
         </div>
     </div>

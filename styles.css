@@ -1,4 +1,32 @@
-.device-selection {
+.tool-description {
+    margin: 10px 0;
+    padding: 8px 15px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    font-size: 0.9rem;
+    color: #444;
+}.toggle-icon {
+    float: right;
+    font-size: 0.8rem;
+}.file-list {
+    margin-top: 10px;
+    max-height: 100px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    color: #777;
+}
+
+.file-list-item {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    margin-bottom: 3px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}.device-selection {
     margin: 20px 0;
     padding: 15px;
     background-color: rgba(255, 255, 255, 0.5);
