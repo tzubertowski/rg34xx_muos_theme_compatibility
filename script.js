@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('input[name="conversion-type"]').forEach(radio => {
         radio.addEventListener('change', function() {
             conversionType = this.value;
+            updatePreviewConversionType(); // Update preview when conversion type changes
         });
     });
     
@@ -89,6 +90,12 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('selectedDevice', selectedDevice);
             // Update logo based on device selection
             updateDeviceLogo();
+            // Update preview device frame
+            updatePreviewDeviceFrame();
+            // Update preview if a file is already selected
+            if (selectedFiles.length > 0) {
+                updatePreviewConversionType();
+            }
         });
     });
     
@@ -101,7 +108,46 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set initial logo based on saved device
     updateDeviceLogo();
+
+    // Initialize the preview
+    initializePreview();
+
+    // Reset the preview
+    resetPreview();
+
+    // Make the status container visible for debugging
+    if (statusContainer) {
+        statusContainer.style.display = 'block';
+    }
+
+    // Verify preview elements
+    verifyPreviewElements();
 });
+
+// Function to verify all preview elements exist and are configured correctly
+function verifyPreviewElements() {
+    const previewContainer = document.getElementById('preview-container');
+    const previewDeviceFrame = document.getElementById('preview-device-frame');
+    const previewScreen = document.getElementById('preview-screen');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+    const previewImage = document.getElementById('preview-image');
+
+    console.log('Verifying preview elements:');
+    console.log('- preview-container:', previewContainer ? 'OK' : 'MISSING');
+    console.log('- preview-device-frame:', previewDeviceFrame ? 'OK' : 'MISSING');
+    console.log('- preview-screen:', previewScreen ? 'OK' : 'MISSING');
+    console.log('- preview-placeholder:', previewPlaceholder ? 'OK' : 'MISSING');
+    console.log('- preview-image:', previewImage ? 'OK' : 'MISSING');
+
+    // Check if the CSS classes are applied correctly
+    if (previewDeviceFrame) {
+        console.log('  preview-device-frame classes:', previewDeviceFrame.className);
+    }
+    if (previewImage) {
+        console.log('  preview-image classes:', previewImage.className);
+        console.log('  preview-image display:', previewImage.style.display);
+    }
+}
 
 // Function to update the logo based on selected device
 function updateDeviceLogo() {
@@ -112,6 +158,46 @@ function updateDeviceLogo() {
         } else {
             deviceLogo.src = 'images/logo.png';
         }
+    }
+}
+
+// Theme preview functionality
+function initializePreview() {
+    // Initialize preview device frame to match selected device
+    updatePreviewDeviceFrame();
+}
+
+function updatePreviewDeviceFrame() {
+    const previewDeviceFrame = document.getElementById('preview-device-frame');
+    if (previewDeviceFrame) {
+        // Remove previous classes
+        previewDeviceFrame.classList.remove('rg34xx-preview', 'rgcubexx-preview');
+
+        // Add device-specific class
+        if (selectedDevice === 'rgcubexx') {
+            previewDeviceFrame.classList.add('rgcubexx-preview');
+        } else {
+            previewDeviceFrame.classList.add('rg34xx-preview');
+        }
+
+        // Update the image fitting if an image is already displayed
+        updatePreviewConversionType();
+    }
+}
+
+function updatePreviewConversionType() {
+    const previewImage = document.getElementById('preview-image');
+    if (previewImage && previewImage.style.display !== 'none') {
+        console.log('Updating preview conversion type to:', conversionType);
+
+        // Remove all fitting classes
+        previewImage.classList.remove('zoom', 'crop', 'fit');
+
+        // Add the current selected conversion type
+        previewImage.classList.add(conversionType);
+
+        // Log the final class list for debugging
+        console.log('Preview image classes:', previewImage.className);
     }
 }
 
@@ -177,6 +263,9 @@ function updateFileSelectionUI() {
                 fileItem.className = 'file-list-item';
                 fileItem.textContent = selectedFiles[0].name;
                 fileListContainer.appendChild(fileItem);
+
+                // Load preview for the selected theme
+                loadThemePreview(selectedFiles[0]);
             } else {
                 uploadText.textContent = `Selected: ${selectedFiles.length} files`;
                 
@@ -187,6 +276,9 @@ function updateFileSelectionUI() {
                     fileItem.textContent = file.name;
                     fileListContainer.appendChild(fileItem);
                 });
+
+                // If multiple files, load preview of the first one
+                loadThemePreview(selectedFiles[0]);
             }
         }
     } else {
@@ -205,7 +297,226 @@ function updateFileSelectionUI() {
         if (fileListContainer) {
             fileListContainer.remove();
         }
+
+        // Reset preview
+        resetPreview();
     }
+}
+
+// Function to load theme preview
+async function loadThemePreview(file) {
+    const previewImage = document.getElementById('preview-image');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+    const previewStatus = document.getElementById('preview-status');
+
+    if (!previewImage || !previewPlaceholder || !file) {
+        console.error('Missing DOM elements for preview or no file provided');
+        return;
+    }
+
+    try {
+        // Show loading message
+        previewPlaceholder.innerHTML = '<p>Loading preview...</p>';
+        previewPlaceholder.style.display = 'flex';
+        previewImage.style.display = 'none';
+
+        if (previewStatus) {
+            previewStatus.textContent = 'Extracting preview from theme...';
+        }
+
+        // Extract preview from the theme file
+        const imageUrl = await extractPreviewFromTheme(file);
+
+        console.log('Image URL obtained:', imageUrl ? 'Yes' : 'No');
+
+        if (imageUrl) {
+            // Hide placeholder, show image
+            previewPlaceholder.style.display = 'none';
+
+            // Set image source and apply conversion style
+            previewImage.src = imageUrl;
+
+            // Make sure we're listening for both load and error events
+            previewImage.onload = function() {
+                console.log('Image loaded successfully');
+                // Explicitly set display to block after image has loaded
+                previewImage.style.display = 'block';
+                // Update image class based on selected conversion type
+                updatePreviewConversionType();
+
+                if (previewStatus) {
+                    previewStatus.textContent = 'Preview loaded successfully';
+                }
+            };
+
+            previewImage.onerror = function() {
+                console.error('Failed to load image from URL:', imageUrl);
+                previewPlaceholder.innerHTML = '<p>Error loading preview image</p>';
+                previewPlaceholder.style.display = 'flex';
+                previewImage.style.display = 'none';
+
+                if (previewStatus) {
+                    previewStatus.textContent = 'Error: Failed to load image';
+                }
+            };
+
+            // Force a reflow to ensure the browser recognizes the changes
+            previewImage.offsetHeight;
+        } else {
+            // If no preview found, show message
+            previewPlaceholder.innerHTML = '<p>No preview image found in theme</p>';
+            previewPlaceholder.style.display = 'flex';
+            previewImage.style.display = 'none';
+
+            if (previewStatus) {
+                previewStatus.textContent = 'No preview available';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading preview:', error);
+        previewPlaceholder.innerHTML = '<p>Error loading preview</p>';
+        previewPlaceholder.style.display = 'flex';
+        previewImage.style.display = 'none';
+
+        if (previewStatus) {
+            previewStatus.textContent = 'Error: ' + error.message;
+        }
+    }
+}
+
+// Function to reset preview
+function resetPreview() {
+    const previewImage = document.getElementById('preview-image');
+    const previewPlaceholder = document.getElementById('preview-placeholder');
+
+    if (previewImage) {
+        previewImage.style.display = 'none';
+        previewImage.src = '';
+    }
+
+    if (previewPlaceholder) {
+        previewPlaceholder.innerHTML = '<p>Upload a theme file to see preview</p>';
+        previewPlaceholder.style.display = 'flex';
+    }
+}
+
+async function extractPreviewFromTheme(file) {
+    console.log('Extracting preview from theme:', file.name);
+    try {
+        const zipData = await readFileAsArrayBuffer(file);
+        const zip = await JSZip.loadAsync(zipData);
+
+        // Log all files in the zip for debugging
+        console.log('Files in the zip:');
+        let fileList = [];
+        zip.forEach((relativePath, zipEntry) => {
+            if (!zipEntry.dir) {
+                fileList.push(relativePath);
+            }
+        });
+        console.log(fileList);
+
+        // Look specifically for the preview.png file
+        const previewPath = '640x480/preview.png';
+        console.log('Checking for:', previewPath);
+
+        if (zip.file(previewPath)) {
+            console.log('Found preview.png');
+            const imageData = await zip.file(previewPath).async('arraybuffer');
+            console.log('Image data size:', imageData.byteLength, 'bytes');
+
+            const blob = new Blob([imageData], { type: 'image/png' });
+            console.log('Created blob:', blob.size, 'bytes');
+
+            const imageUrl = URL.createObjectURL(blob);
+            console.log('Created URL:', imageUrl);
+
+            addStatusMessage(`Found preview image in theme: ${previewPath}`, 'success');
+            return imageUrl;
+        }
+
+        // Try additional paths for newer themes that may use 1280x720 format
+        const additionalPaths = [
+            '1280x720/preview.png',
+            '1280x720/preview.jpg'
+        ];
+
+        for (const path of additionalPaths) {
+            console.log('Checking additional path:', path);
+            if (zip.file(path)) {
+                console.log('Found image at:', path);
+                const imageData = await zip.file(path).async('arraybuffer');
+                const mimeType = path.endsWith('.jpg') || path.endsWith('.jpeg') ? 'image/jpeg' : 'image/png';
+                const blob = new Blob([imageData], { type: mimeType });
+                const imageUrl = URL.createObjectURL(blob);
+
+                addStatusMessage(`Found preview image in theme at 1280x720 location: ${path}`, 'success');
+                return imageUrl;
+            }
+        }
+
+        // Try alternative paths if the standard one isn't found
+        const alternativePaths = [
+            '640x480/preview.jpg',
+            'preview.png',
+            'preview.jpg',
+            // Add common wallpaper paths as additional fallbacks
+            '640x480/image/wall/wall.png',
+            '640x480/image/wall/wall.jpg',
+            '640x480/image/back/main_bg.png',
+            '640x480/image/back/main_bg.jpg',
+            // Try 1280x720 common paths
+            '1280x720/image/wall/wall.png',
+            '1280x720/image/wall/wallpaper.png',
+            '1280x720/image/wall/default.png'
+        ];
+
+        for (const path of alternativePaths) {
+            console.log('Checking alternative path:', path);
+            if (zip.file(path)) {
+                console.log('Found image at:', path);
+                const imageData = await zip.file(path).async('arraybuffer');
+                const mimeType = path.endsWith('.jpg') || path.endsWith('.jpeg') ? 'image/jpeg' : 'image/png';
+                const blob = new Blob([imageData], { type: mimeType });
+                const imageUrl = URL.createObjectURL(blob);
+
+                addStatusMessage(`Found preview image in theme at alternative location: ${path}`, 'success');
+                return imageUrl;
+            }
+        }
+
+        // If still no image found, look for any image in the theme
+        console.log('Searching for any image in the theme...');
+        for (const path of fileList) {
+            if (path.match(/\.(png|jpg|jpeg)$/i)) {
+                console.log('Found image:', path);
+                const imageData = await zip.file(path).async('arraybuffer');
+                const mimeType = path.endsWith('.jpg') || path.endsWith('.jpeg') ? 'image/jpeg' : 'image/png';
+                const blob = new Blob([imageData], { type: mimeType });
+                const imageUrl = URL.createObjectURL(blob);
+
+                addStatusMessage(`Using image from theme: ${path}`, 'success');
+                return imageUrl;
+            }
+        }
+
+        console.log('No suitable image found in the theme');
+        addStatusMessage('Could not find preview.png or any suitable image in the theme.', 'error');
+        return null;
+    } catch (error) {
+        console.error('Error extracting preview:', error);
+        addStatusMessage(`Error extracting preview from theme: ${error.message}`, 'error');
+        return null;
+    }
+}
+
+function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => resolve(event.target.result);
+        reader.onerror = error => reject(error);
+        reader.readAsArrayBuffer(file);
+    });
 }
 
 function addStatusMessage(message, type = 'normal') {
